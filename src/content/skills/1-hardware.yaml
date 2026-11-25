@@ -1,0 +1,10 @@
+# One file per skill group. Edit the list to match YOUR skills; be ready to talk
+# about anything listed here in an interview. "order" controls the order on the page.
+group: Hardware
+order: 1
+items:
+  - Circuit analysis
+  - PCB design
+  - Power distribution
+  - Soldering & board assembly
+  - Lab equipment (oscilloscope, multimeter, power supply)

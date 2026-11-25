@@ -7,9 +7,11 @@ export default defineConfig({
   // If you add a custom domain later, change this to e.g. 'https://maximlamoureux.com'.
   site: 'https://demmemes1234.github.io',
 
-  // Leave as '/' when the GitHub repo is named "Demmemes1234.github.io".
-  // If the repo has any other name (e.g. "portfolio"), set this to '/portfolio'.
-  base: '/',
+  // The part of the address after the domain. On GitHub Pages this is the repo name:
+  // https://demmemes1234.github.io/Maxim_Lamoureux_Portfolio/
+  // If you add a custom domain later (or rename the repo to "Demmemes1234.github.io"),
+  // change this to '/'.
+  base: '/Maxim_Lamoureux_Portfolio',
 
   trailingSlash: 'ignore',
 });

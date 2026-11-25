@@ -1,0 +1,10 @@
+group: Tools
+order: 3
+items:
+  # Add a detail to any item like this:
+  # - name: Altium Designer
+  #   detail: "2-layer boards, 2 fabricated"
+  - Altium Designer
+  - KiCad
+  - LTspice
+  - Git & GitHub
