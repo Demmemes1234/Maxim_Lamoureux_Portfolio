@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Empty from '../components/Empty.astro';
+import { getSkills, getProjects, url } from '../lib/utils';
+
+const groups = await getSkills();
+
+// Link a skill to the projects where it appears in "tools", so claims have evidence.
+const projects = await getProjects();
+const usedIn = (name: string) =>
+  projects.filter((p) => p.data.tools.some((t) => t.toLowerCase() === name.toLowerCase()));
+---
+
+<BaseLayout title="Skills" description="Hardware, software and tool skills of Maxim Lamoureux.">
+  <PageHeader title="Skills" lead="What I work with. Where a skill was used in a project, the project is linked." />
+
+  <div class="container section-tight">
+    {groups.length === 0 && <Empty message="Skills list coming soon." />}
+    <div class="grid grid-2 skills-grid">
+      {
+        groups.map(({ data }) => (
+          <section class="card skill-group" aria-labelledby={`skills-${data.group}`}>
+            <h2 id={`skills-${data.group}`}>{data.group}</h2>
+            <ul class="skill-list">
+              {data.items.map((item) => {
+                const name = typeof item === 'string' ? item : item.name;
+                const detail = typeof item === 'string' ? undefined : item.detail;
+                const used = usedIn(name);
+                return (
+                  <li>
+                    <span class="skill-name">{name}</span>
+                    {detail && <span class="skill-detail">{detail}</span>}
+                    {used.length > 0 && (
+                      <span class="skill-detail">
+                        Used in{' '}
+                        {used.map((p, i) => (
+                          <>
+                            {i > 0 && ', '}
+                            <a href={url(`/projects/${p.id}/`)}>{p.data.title}</a>
+                          </>
+                        ))}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
+      }
+    </div>
+  </div>
+</BaseLayout>

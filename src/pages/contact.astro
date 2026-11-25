@@ -1,0 +1,67 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../site.config';
+import { url } from '../lib/utils';
+---
+
+<BaseLayout title="Contact" description={`Get in touch with ${site.name}.`}>
+  <PageHeader title="Contact" lead={`${site.lookingFor} The fastest way to reach me is email.`} />
+
+  <div class="container section-tight">
+    <ul class="contact-list">
+      <li class="card contact-item">
+        <Icon name="mail" size={22} />
+        <div>
+          <h2>Email</h2>
+          <a href={`mailto:${site.email}`} class="contact-value">{site.email}</a>
+        </div>
+        <button type="button" class="btn btn-small copy-btn" data-copy={site.email}>
+          <Icon name="copy" size={16} /> <span>Copy</span>
+        </button>
+      </li>
+      {site.links.linkedin && (
+        <li class="card contact-item">
+          <Icon name="linkedin" size={22} />
+          <div>
+            <h2>LinkedIn</h2>
+            <a href={site.links.linkedin} rel="me noopener" class="contact-value">Connect on LinkedIn</a>
+          </div>
+        </li>
+      )}
+      {site.links.github && (
+        <li class="card contact-item">
+          <Icon name="github" size={22} />
+          <div>
+            <h2>GitHub</h2>
+            <a href={site.links.github} rel="me noopener" class="contact-value">{site.links.github.replace('https://', '')}</a>
+          </div>
+        </li>
+      )}
+      <li class="card contact-item">
+        <Icon name="file" size={22} />
+        <div>
+          <h2>Resume</h2>
+          <a href={url(site.resumeFile)} download class="contact-value">Download PDF</a>
+        </div>
+      </li>
+    </ul>
+    <p class="muted contact-location"><Icon name="pin" size={15} /> Based in {site.location}</p>
+  </div>
+</BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const label = btn.querySelector('span')!;
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy!);
+        label.textContent = 'Copied';
+      } catch {
+        label.textContent = 'Press Ctrl+C';
+      }
+      setTimeout(() => (label.textContent = 'Copy'), 2000);
+    }),
+  );
+</script>

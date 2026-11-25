@@ -1,0 +1,151 @@
+---
+/** One page per project, generated from src/content/projects/<name>/index.md */
+import { render } from 'astro:content';
+import { Picture, getImage } from 'astro:assets';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Gallery from '../../components/Gallery.astro';
+import Videos from '../../components/Videos.astro';
+import Icon from '../../components/Icon.astro';
+import { url, getProjects, formatMonth, projectFile, slugify, type Project } from '../../lib/utils';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project, i) => ({
+    params: { id: project.id },
+    props: { project, newer: projects[i - 1], older: projects[i + 1] },
+  }));
+}
+
+interface Props { project: Project; newer?: Project; older?: Project }
+const { project, newer, older } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+
+const report = data.links.report
+  ? data.links.report.startsWith('./') ? projectFile(project, data.links.report) : data.links.report
+  : undefined;
+const hasLinks = data.links.github || data.links.demo || report || data.links.other.length > 0;
+
+// Social preview image (LinkedIn etc.): the cover, cropped to 1200×630.
+const og = data.cover ? (await getImage({ src: data.cover, width: 1200, height: 630, fit: 'cover', format: 'jpeg' })).src : undefined;
+---
+
+<BaseLayout title={data.title} description={data.summary} image={og} type="article">
+  <article class="project">
+    <header class="container project-header">
+      <a class="link-back" href={url('/projects/')}><Icon name="back" size={16} /> All projects</a>
+      <p class="eyebrow">
+        <time datetime={data.date.toISOString()}>{formatMonth(data.date)}</time>
+        {data.draft && <span class="draft-badge">Draft (hidden on live site)</span>}
+      </p>
+      <h1>{data.title}</h1>
+      <p class="lead">{data.summary}</p>
+      {
+        data.tags.length > 0 && (
+          <ul class="tag-list" aria-label="Tags">
+            {data.tags.map((t) => (
+              <li><a class="tag" href={url(`/projects/?tag=${slugify(t)}`)}>{t}</a></li>
+            ))}
+          </ul>
+        )
+      }
+    </header>
+
+    {
+      data.cover && (
+        <div class="container project-cover">
+          <Picture
+            src={data.cover}
+            alt={data.coverAlt!}
+            widths={[640, 1000, 1400, 2000]}
+            sizes="(min-width: 1180px) 1100px, 100vw"
+            formats={['avif', 'webp']}
+            loading="eager"
+            fetchpriority="high"
+          />
+        </div>
+      )
+    }
+
+    <div class="container project-layout">
+      <aside class="project-facts" aria-label="Project facts">
+        <dl>
+          {data.role && (<div><dt>Role</dt><dd>{data.role}</dd></div>)}
+          {data.teamSize && (<div><dt>Team</dt><dd>{data.teamSize === 1 ? 'Solo' : `${data.teamSize} people`}</dd></div>)}
+          {data.duration && (<div><dt>Duration</dt><dd>{data.duration}</dd></div>)}
+          {data.tools.length > 0 && (
+            <div>
+              <dt>Tools</dt>
+              <dd><ul class="tool-list">{data.tools.map((t) => <li>{t}</li>)}</ul></dd>
+            </div>
+          )}
+        </dl>
+        {
+          hasLinks && (
+            <ul class="project-links">
+              {data.links.github && <li><a class="btn btn-block" href={data.links.github}><Icon name="github" /> Source code</a></li>}
+              {data.links.demo && <li><a class="btn btn-block" href={data.links.demo}><Icon name="external" /> Live demo</a></li>}
+              {report && <li><a class="btn btn-block" href={report}><Icon name="file" /> Report (PDF)</a></li>}
+              {data.links.other.map((l) => <li><a class="btn btn-block" href={l.url}><Icon name="external" /> {l.label}</a></li>)}
+            </ul>
+          )
+        }
+      </aside>
+
+      <div class="project-main">
+        {
+          data.highlights.length > 0 && (
+            <ul class="highlights" aria-label="Key results">
+              {data.highlights.map((h) => (
+                <li><span class="hl-value">{h.value}</span><span class="hl-label">{h.label}</span></li>
+              ))}
+            </ul>
+          )
+        }
+
+        <div class="prose">
+          <Content />
+        </div>
+
+        {
+          data.links.demo && data.embedDemo && (
+            <section class="project-section" aria-labelledby="demo-title">
+              <h2 id="demo-title">Live demo</h2>
+              <div class="demo-frame">
+                <iframe src={data.links.demo} title={`Live demo of ${data.title}`} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" />
+              </div>
+              <p><a class="link-arrow" href={data.links.demo}>Open full screen <Icon name="external" size={15} /></a></p>
+            </section>
+          )
+        }
+
+        {
+          data.videos.length > 0 && (
+            <section class="project-section" aria-labelledby="videos-title">
+              <h2 id="videos-title">Videos</h2>
+              <Videos project={project} />
+            </section>
+          )
+        }
+
+        {
+          data.gallery.length > 0 && (
+            <section class="project-section" aria-labelledby="gallery-title">
+              <h2 id="gallery-title">Gallery</h2>
+              <Gallery items={data.gallery} />
+            </section>
+          )
+        }
+      </div>
+    </div>
+
+    {
+      (newer || older) && (
+        <nav class="container pager" aria-label="More projects">
+          {older ? <a href={url(`/projects/${older.id}/`)} rel="prev"><span class="muted">Previous</span>{older.data.title}</a> : <span />}
+          {newer && <a href={url(`/projects/${newer.id}/`)} rel="next" class="pager-next"><span class="muted">Next</span>{newer.data.title}</a>}
+        </nav>
+      )
+    }
+  </article>
+</BaseLayout>

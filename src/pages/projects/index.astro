@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import Empty from '../../components/Empty.astro';
+import { getProjects, slugify } from '../../lib/utils';
+
+const projects = await getProjects();
+
+// Filter buttons are built from the tags you actually use, most common first.
+const counts = new Map<string, number>();
+for (const p of projects) for (const t of p.data.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+---
+
+<BaseLayout title="Projects" description="Hardware, embedded and software projects by Maxim Lamoureux.">
+  <PageHeader title="Projects" lead="Hardware, embedded and software work: club, course and personal projects." />
+
+  <section class="container section-tight">
+    {
+      projects.length === 0 ? (
+        <Empty message="Projects are on the way. Check back soon." />
+      ) : (
+        <>
+          {tags.length > 1 && (
+            <div class="filter-bar" role="group" aria-label="Filter projects by tag">
+              <button type="button" class="chip" data-filter="all" aria-pressed="true">
+                All <span class="chip-count">{projects.length}</span>
+              </button>
+              {tags.map(([tag, n]) => (
+                <button type="button" class="chip" data-filter={slugify(tag)} aria-pressed="false">
+                  {tag} <span class="chip-count">{n}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <p class="sr-only" aria-live="polite" id="filter-status"></p>
+          <div class="grid grid-3" id="project-grid">
+            {projects.map((p, i) => (
+              <ProjectCard project={p} eager={i < 3} headingLevel="h2" />
+            ))}
+          </div>
+        </>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<script>
+  // Tag filter. Without JavaScript every project is simply shown.
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('[data-filter]')];
+  const cards = [...document.querySelectorAll<HTMLElement>('#project-grid > .project-card')];
+  const status = document.getElementById('filter-status');
+
+  function apply(filter: string, updateUrl = true) {
+    if (!buttons.some((b) => b.dataset.filter === filter)) filter = 'all';
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+    let shown = 0;
+    for (const card of cards) {
+      const tags: string[] = JSON.parse(card.dataset.tags || '[]');
+      const show = filter === 'all' || tags.includes(filter);
+      card.hidden = !show;
+      if (show) shown++;
+    }
+    if (status) status.textContent = `${shown} project${shown === 1 ? '' : 's'} shown`;
+    if (updateUrl) {
+      const u = new URL(location.href);
+      filter === 'all' ? u.searchParams.delete('tag') : u.searchParams.set('tag', filter);
+      history.replaceState(null, '', u);
+    }
+  }
+
+  buttons.forEach((b) => b.addEventListener('click', () => apply(b.dataset.filter!)));
+  // Lets you share a pre-filtered link, e.g. /projects/?tag=hardware
+  const initial = new URLSearchParams(location.search).get('tag');
+  if (initial) apply(initial, false);
+</script>

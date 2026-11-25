@@ -1,0 +1,54 @@
+---
+/**
+ * YouTube / Vimeo embeds (for long videos) and short local MP4 clips
+ * (autoplay, muted, looping, with a poster image).
+ */
+import { getImage } from 'astro:assets';
+import { projectFile, youtubeId, vimeoId, type Project } from '../lib/utils';
+
+interface Props { project: Project }
+const { project } = Astro.props;
+
+const videos = await Promise.all(
+  project.data.videos.map(async (v) => {
+    if ('youtube' in v) return { kind: 'embed' as const, title: v.title, src: `https://www.youtube-nocookie.com/embed/${youtubeId(v.youtube)}?rel=0` };
+    if ('vimeo' in v) return { kind: 'embed' as const, title: v.title, src: `https://player.vimeo.com/video/${vimeoId(v.vimeo)}?dnt=1` };
+    const poster = await getImage({ src: v.poster, width: Math.min(v.poster.width, 1280), format: 'webp' });
+    return { kind: 'file' as const, title: v.title, caption: v.caption, src: projectFile(project, v.file), poster: poster.src, type: v.file.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4' };
+  }),
+);
+---
+
+{
+  videos.length > 0 && (
+    <div class="videos">
+      {videos.map((v) =>
+        v.kind === 'embed' ? (
+          <figure class="video">
+            <div class="ratio">
+              <iframe src={v.src} title={v.title} loading="lazy" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" />
+            </div>
+            <figcaption>{v.title}</figcaption>
+          </figure>
+        ) : (
+          <figure class="video">
+            <video class="clip" autoplay muted loop playsinline controls preload="metadata" poster={v.poster} aria-label={v.title}>
+              <source src={v.src} type={v.type} />
+            </video>
+            <figcaption>{v.caption ?? v.title}</figcaption>
+          </figure>
+        ),
+      )}
+    </div>
+  )
+}
+
+<script>
+  // Respect "reduce motion" settings: don't autoplay clips for those users.
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.querySelectorAll<HTMLVideoElement>('video.clip').forEach((v) => {
+      v.removeAttribute('autoplay');
+      v.pause();
+    });
+  }
+</script>

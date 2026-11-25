@@ -1,35 +1,146 @@
 ---
 /**
- * Wraps every page: <head> (SEO + social tags), header, footer.
+ * Wraps every page: <head> (SEO + social tags), header, footer, theme toggle.
  * Pages pass a title and description; everything else comes from site.config.ts.
  */
 import { site } from '../site.config';
+import { url } from '../lib/utils';
+import Icon from '../components/Icon.astro';
 import '../styles/global.css';
 
 interface Props {
   title?: string;
   description?: string;
+  /** Social preview image: a full URL, or a path in /public. */
   image?: string;
+  type?: 'website' | 'article';
 }
 
-const { title, description = site.description, image = site.ogImage } = Astro.props;
-const fullTitle = title ? `${title} · ${site.name}` : `${site.name}: Electrical Engineering Portfolio`;
+const { title, description = site.description, image = site.ogImage, type = 'website' } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · Electrical Engineering Portfolio`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-const ogImage = new URL(image, Astro.site);
+const ogImage = new URL(image.startsWith('http') || image.startsWith(import.meta.env.BASE_URL) ? image : url(image), Astro.site);
+
+const nav = [
+  { href: '/projects/', label: 'Projects' },
+  { href: '/experience/', label: 'Experience' },
+  { href: '/skills/', label: 'Skills' },
+  { href: '/achievements/', label: 'Achievements' },
+  { href: '/resume/', label: 'Resume' },
+  { href: '/contact/', label: 'Contact' },
+];
+const current = Astro.url.pathname.replace(/\/?$/, '/');
+const isActive = (href: string) => current.startsWith(url(href));
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" style={`--accent: ${site.accent}`}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    <link rel="icon" href={url('/favicon.svg')} type="image/svg+xml" />
+    <link rel="sitemap" href={url('/sitemap.xml')} />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="author" content={site.name} />
+
+    <!-- Social previews (LinkedIn, Slack, iMessage, ...) -->
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title ?? site.name} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="en_CA" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Apply the saved light/dark choice before the page paints (avoids a flash). -->
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('theme');
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
   </head>
   <body>
-    <main>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href={url('/')} aria-label={`${site.name}, home`}>
+          <span class="brand-mark" aria-hidden="true">ML</span>
+          <span class="brand-name">{site.name}</span>
+        </a>
+
+        <nav aria-label="Main">
+          <button class="icon-btn menu-btn" type="button" aria-expanded="false" aria-controls="nav-list">
+            <Icon name="menu" size={20} />
+            <span class="sr-only">Menu</span>
+          </button>
+          <ul id="nav-list" class="nav-list">
+            {
+              nav.map((item) => (
+                <li>
+                  <a href={url(item.href)} aria-current={isActive(item.href) ? 'page' : undefined}>
+                    {item.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+
+        <button class="icon-btn theme-btn" type="button" aria-label="Toggle dark mode" aria-pressed="false">
+          <span class="theme-icon-light"><Icon name="moon" size={18} /></span>
+          <span class="theme-icon-dark"><Icon name="sun" size={18} /></span>
+        </button>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
       <slot />
     </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>© {new Date().getFullYear()} {site.name}</p>
+        <ul class="footer-links" aria-label="Elsewhere">
+          <li><a href={`mailto:${site.email}`}><Icon name="mail" label="Email" /></a></li>
+          {site.links.linkedin && <li><a href={site.links.linkedin} rel="me noopener"><Icon name="linkedin" label="LinkedIn" /></a></li>}
+          {site.links.github && <li><a href={site.links.github} rel="me noopener"><Icon name="github" label="GitHub" /></a></li>}
+        </ul>
+      </div>
+    </footer>
+
+    <script>
+      // Light / dark toggle: remembers your choice; defaults to the device setting.
+      const root = document.documentElement;
+      const btn = document.querySelector<HTMLButtonElement>('.theme-btn')!;
+      const media = matchMedia('(prefers-color-scheme: dark)');
+      const isDark = () => (root.dataset.theme ? root.dataset.theme === 'dark' : media.matches);
+      const sync = () => btn.setAttribute('aria-pressed', String(isDark()));
+      sync();
+      media.addEventListener('change', sync);
+      btn.addEventListener('click', () => {
+        root.dataset.theme = isDark() ? 'light' : 'dark';
+        try { localStorage.setItem('theme', root.dataset.theme); } catch {}
+        sync();
+      });
+
+      // Mobile menu
+      const menuBtn = document.querySelector<HTMLButtonElement>('.menu-btn')!;
+      menuBtn.addEventListener('click', () => {
+        const open = menuBtn.getAttribute('aria-expanded') === 'true';
+        menuBtn.setAttribute('aria-expanded', String(!open));
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menuBtn.getAttribute('aria-expanded') === 'true') {
+          menuBtn.setAttribute('aria-expanded', 'false');
+          menuBtn.focus();
+        }
+      });
+    </script>
   </body>
 </html>

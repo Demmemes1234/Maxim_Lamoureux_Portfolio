@@ -1,0 +1,50 @@
+---
+import { Picture } from 'astro:assets';
+import { url, slugify, formatMonth, type Project } from '../lib/utils';
+
+interface Props {
+  project: Project;
+  /** true for the first cards on the home page: loads the image immediately. */
+  eager?: boolean;
+  headingLevel?: 'h2' | 'h3';
+}
+const { project, eager = false, headingLevel: H = 'h3' } = Astro.props;
+const { data } = project;
+const href = url(`/projects/${project.id}/`);
+---
+
+<article class="card project-card" data-tags={JSON.stringify(data.tags.map(slugify))}>
+  <div class="card-media">
+    {
+      data.cover ? (
+        <Picture
+          src={data.cover}
+          alt=""
+          widths={[400, 700, 1000]}
+          sizes="(min-width: 1100px) 520px, (min-width: 700px) 50vw, 100vw"
+          formats={['avif', 'webp']}
+          loading={eager ? 'eager' : 'lazy'}
+          fetchpriority={eager ? 'high' : undefined}
+        />
+      ) : (
+        <div class="card-media-empty" aria-hidden="true">{data.title.slice(0, 1)}</div>
+      )
+    }
+  </div>
+  <div class="card-body">
+    <p class="card-meta">
+      <time datetime={data.date.toISOString()}>{formatMonth(data.date)}</time>
+      {data.role && <span> · {data.role}</span>}
+      {data.draft && <span class="draft-badge">Draft</span>}
+    </p>
+    <H class="card-title"><a href={href} class="stretched-link">{data.title}</a></H>
+    <p class="card-summary">{data.summary}</p>
+    {
+      data.tags.length > 0 && (
+        <ul class="tag-list" aria-label="Tags">
+          {data.tags.map((t) => <li class="tag">{t}</li>)}
+        </ul>
+      )
+    }
+  </div>
+</article>

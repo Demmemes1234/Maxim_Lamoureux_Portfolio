@@ -1,0 +1,57 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Empty from '../components/Empty.astro';
+import Icon from '../components/Icon.astro';
+import { getExperience, formatRange } from '../lib/utils';
+
+const all = await Promise.all(
+  (await getExperience()).map(async (e) => ({ entry: e, Content: (await render(e)).Content })),
+);
+const work = all.filter((x) => x.entry.data.type !== 'Education');
+const education = all.filter((x) => x.entry.data.type === 'Education');
+const groups = [
+  { id: 'work', title: 'Experience & leadership', items: work },
+  { id: 'education', title: 'Education', items: education },
+].filter((g) => g.items.length > 0);
+---
+
+<BaseLayout title="Experience" description="Work experience, club leadership and education of Maxim Lamoureux.">
+  <PageHeader title="Experience" lead="Jobs, internships, club roles and leadership." />
+
+  <div class="container section-tight">
+    {groups.length === 0 && <Empty message="Experience entries are coming soon." />}
+    {
+      groups.map((g) => (
+        <section class="timeline-group" aria-labelledby={`${g.id}-title`}>
+          <h2 id={`${g.id}-title`}>{g.title}</h2>
+          <ol class="timeline">
+            {g.items.map(({ entry: { data }, Content }) => (
+              <li class="timeline-item">
+                <div class="timeline-when">
+                  <span>{formatRange(data.start, data.end)}</span>
+                  <span class="badge">{data.type}</span>
+                </div>
+                <div class="timeline-body">
+                  <h3>
+                    {data.role}
+                    {data.draft && <span class="draft-badge">Draft</span>}
+                  </h3>
+                  <p class="timeline-org">
+                    {data.url ? <a href={data.url}>{data.organization}</a> : data.organization}
+                    {data.location && (
+                      <span class="muted"> · <Icon name="pin" size={14} /> {data.location}</span>
+                    )}
+                  </p>
+                  {data.summary && <p>{data.summary}</p>}
+                  <div class="prose prose-compact"><Content /></div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>

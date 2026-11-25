@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHeader from '../components/PageHeader.astro';
+import Icon from '../components/Icon.astro';
+import { site } from '../site.config';
+import { url } from '../lib/utils';
+const pdf = url(site.resumeFile);
+---
+
+<BaseLayout title="Resume" description={`Resume of ${site.name}, Electrical Engineering student at McGill University.`}>
+  <PageHeader title="Resume">
+    <div class="button-row">
+      <a class="btn btn-primary" href={pdf} download><Icon name="download" /> Download PDF</a>
+      <a class="btn" href={pdf}><Icon name="external" /> Open in new tab</a>
+    </div>
+  </PageHeader>
+  <div class="container section-tight">
+    <div class="pdf-frame">
+      <object data={pdf} type="application/pdf" aria-label={`${site.name} resume`}>
+        <p class="empty-state">Your browser can't show the PDF here. <a href={pdf}>Open the resume</a> instead.</p>
+      </object>
+    </div>
+  </div>
+</BaseLayout>

@@ -14,4 +14,7 @@ export default defineConfig({
   base: '/Maxim_Lamoureux_Portfolio',
 
   trailingSlash: 'ignore',
+
+  // Hide Astro's floating developer toolbar while previewing locally.
+  devToolbar: { enabled: false },
 });

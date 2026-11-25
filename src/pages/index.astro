@@ -1,10 +1,75 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import Icon from '../components/Icon.astro';
 import { site } from '../site.config';
+import { url, getFeaturedProjects, getProjects, getExperience, formatRange } from '../lib/utils';
+
+const featured = await getFeaturedProjects(4);
+const totalProjects = (await getProjects()).length;
+const current = (await getExperience()).filter((e) => !e.data.end && e.data.type !== 'Education').slice(0, 3);
 ---
 
 <BaseLayout>
-  <h1>{site.name}</h1>
-  <p>{site.pitch}</p>
-  <p><em>Stage 1 scaffold: the real home page comes in Stage 3.</em></p>
+  <section class="hero container" aria-labelledby="hero-title">
+    <div class="hero-text">
+      <p class="eyebrow">Electrical Engineering · McGill University</p>
+      <h1 id="hero-title">{site.name}</h1>
+      <p class="hero-pitch">{site.pitch}</p>
+      <p class="hero-sub">{site.lookingFor}</p>
+      <div class="button-row">
+        <a class="btn btn-primary" href={url(site.resumeFile)} download>
+          <Icon name="download" /> Resume
+        </a>
+        <a class="btn" href={url('/contact/')}><Icon name="mail" /> Contact</a>
+        {site.links.linkedin && (
+          <a class="btn btn-ghost" href={site.links.linkedin} rel="me noopener"><Icon name="linkedin" /> LinkedIn</a>
+        )}
+        {site.links.github && (
+          <a class="btn btn-ghost" href={site.links.github} rel="me noopener"><Icon name="github" /> GitHub</a>
+        )}
+      </div>
+    </div>
+    <div class="hero-photo">
+      <img src={url(site.photo)} alt={`Portrait of ${site.name}`} width="320" height="320" fetchpriority="high" />
+    </div>
+  </section>
+
+  {
+    current.length > 0 && (
+      <section class="container now" aria-label="Currently">
+        <ul class="now-list">
+          {current.map((e) => (
+            <li>
+              <span class="now-dot" aria-hidden="true" />
+              <span>
+                <strong>{e.data.role}</strong>, {e.data.organization}
+                <span class="muted"> · {formatRange(e.data.start, e.data.end)}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    featured.length > 0 && (
+      <section class="container section" aria-labelledby="featured-title">
+        <div class="section-head">
+          <h2 id="featured-title">Featured projects</h2>
+          {totalProjects > featured.length && (
+            <a class="link-arrow" href={url('/projects/')}>
+              All {totalProjects} projects <Icon name="arrow" size={16} />
+            </a>
+          )}
+        </div>
+        <div class="grid grid-2">
+          {featured.map((p, i) => (
+            <ProjectCard project={p} eager={i < 2} />
+          ))}
+        </div>
+      </section>
+    )
+  }
 </BaseLayout>
