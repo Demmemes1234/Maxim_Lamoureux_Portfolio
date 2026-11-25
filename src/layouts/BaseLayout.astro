@@ -1,0 +1,35 @@
+---
+/**
+ * Wraps every page: <head> (SEO + social tags), header, footer.
+ * Pages pass a title and description; everything else comes from site.config.ts.
+ */
+import { site } from '../site.config';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+}
+
+const { title, description = site.description, image = site.ogImage } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name}: Electrical Engineering Portfolio`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(image, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
