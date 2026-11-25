@@ -15,7 +15,7 @@ draft: true                      # true = hidden on the live site. Set to false 
 role: "Power team lead"
 teamSize: 4                      # number of people, or leave empty
 duration: "Sept 2025 – Mar 2026"
-tools: [Altium Designer, LTspice, Oscilloscope, Electronic load]
+tools: [Altium Designer, Oscilloscope, Electronic load]
 
 # Big numbers shown at the top of the page. Recruiters love these.
 highlights:

@@ -5,6 +5,4 @@ items:
   # - name: Altium Designer
   #   detail: "2-layer boards, 2 fabricated"
   - Altium Designer
-  - KiCad
-  - LTspice
   - Git & GitHub
