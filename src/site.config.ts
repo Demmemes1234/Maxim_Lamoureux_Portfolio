@@ -8,8 +8,7 @@ export const site = {
   name: 'Maxim Lamoureux',
 
   /** Short line shown under your name on the home page. */
-  pitch:
-    'Electrical Engineering student at McGill. I design power systems and hardware, and I write the code that runs them.',
+  pitch: 'Electrical Engineering student at McGill.',
 
   /** Smaller line under the pitch. */
   subtitle: 'B.Eng. Electrical Engineering, McGill University · 2nd year',
